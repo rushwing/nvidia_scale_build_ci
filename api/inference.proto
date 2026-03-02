@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package nvidia.infer.v1;
+
+// ── Data types ───────────────────────────────────────────────────────────────
+
+message TensorProto {
+  repeated float  data  = 1;  // flattened row-major
+  repeated int64  shape = 2;  // e.g. [batch, channels, H, W]
+  string          dtype = 3;  // "float32", "int8", etc.
+}
+
+// ── RPC messages ─────────────────────────────────────────────────────────────
+
+message InferRequest {
+  string      model_id = 1;
+  TensorProto input    = 2;
+  map<string, string> metadata = 3;  // e.g. {"trace_id": "abc123"}
+}
+
+message InferResponse {
+  TensorProto output     = 1;
+  int64       latency_us = 2;
+  string      status     = 3;  // "ok" | "error:<msg>"
+}
+
+// ── Health / readiness ───────────────────────────────────────────────────────
+
+message HealthRequest  {}
+message HealthResponse { bool ready = 1; string version = 2; }

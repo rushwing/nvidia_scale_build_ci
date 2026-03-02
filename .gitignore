@@ -39,3 +39,12 @@
 
 # debug information files
 *.dwo
+
+# Bazel output symlinks (auto-created in workspace root)
+/bazel-*
+
+# Bazel user cache
+.bazel/
+
+# macOS
+.DS_Store

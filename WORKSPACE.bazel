@@ -1,0 +1,3 @@
+# Empty: this project uses bzlmod (MODULE.bazel).
+# Bazel still requires this file to mark the workspace root.
+# See MODULE.bazel for all dependency declarations.

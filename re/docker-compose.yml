@@ -1,0 +1,30 @@
+## re/docker-compose.yml
+## Local Remote Cache emulation (Day 5 exercise).
+##
+## Start:  docker compose -f re/docker-compose.yml up -d
+## Stop:   docker compose -f re/docker-compose.yml down
+##
+## Then build with:
+##   bazel build //services/infer:inferd --config=remote_cache
+##
+## bazel-remote docs: https://github.com/buchgr/bazel-remote
+
+version: "3.8"
+
+services:
+  bazel-remote:
+    image: buchgr/bazel-remote-cache:latest
+    container_name: bazel-remote
+    ports:
+      - "9092:9092"   # HTTP cache endpoint  (--remote_cache=http://localhost:9092)
+      - "9093:9093"   # gRPC endpoint        (--remote_cache=grpc://localhost:9093)
+    volumes:
+      - bazel-remote-data:/data
+    command: >
+      --dir=/data
+      --max_size=5
+      --port=9092
+      --grpc_port=9093
+
+volumes:
+  bazel-remote-data:

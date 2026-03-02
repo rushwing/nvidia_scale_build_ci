@@ -1,0 +1,68 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# .bazelrc — NVIDIA Scale Build CI
+# Each --config=<name> block is one "lesson domain" you can toggle.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Baseline: enforce hermetic action environments (Day 1) ───────────────────
+# Prevents actions from reading the host environment.
+# → If a build works with this, it will work on any machine.
+build --incompatible_strict_action_env
+
+# C++17 everywhere (host and target).
+build --cxxopt=-std=c++17
+build --host_cxxopt=-std=c++17
+
+# Show command lines on failure (great for debugging action inputs).
+build --verbose_failures
+
+# ── Reproducible builds (Day 4) ──────────────────────────────────────────────
+# --nostamp: don't embed build timestamp / workspace status into binaries.
+# Use: bazel build //... --config=repro
+build:repro --nostamp
+build:repro --workspace_status_command=""
+
+# ── Remote cache (Day 5) ─────────────────────────────────────────────────────
+# Use: bazel build //... --config=remote_cache
+# Requires docker-compose -f re/docker-compose.yml up -d
+build:remote_cache --remote_cache=http://localhost:9092
+build:remote_cache --remote_download_minimal
+build:remote_cache --remote_accept_cached
+
+# ── Security hardening (Day 7) ───────────────────────────────────────────────
+# Use: bazel build //... --config=hardening
+build:hardening --copt=-fstack-protector-strong
+build:hardening --copt=-D_FORTIFY_SOURCE=2
+build:hardening --copt=-fPIE
+build:hardening --linkopt=-pie
+build:hardening --linkopt=-Wl,-z,relro
+build:hardening --linkopt=-Wl,-z,now
+
+# ── AddressSanitizer (Day 7) ─────────────────────────────────────────────────
+# Use: bazel test //tests/... --config=asan
+build:asan --copt=-fsanitize=address
+build:asan --copt=-g
+build:asan --copt=-O1
+build:asan --copt=-fno-omit-frame-pointer
+build:asan --linkopt=-fsanitize=address
+build:asan --action_env=ASAN_OPTIONS=halt_on_error=1:detect_leaks=1
+
+# ── UndefinedBehaviorSanitizer (Day 7) ───────────────────────────────────────
+build:ubsan --copt=-fsanitize=undefined
+build:ubsan --copt=-g
+build:ubsan --linkopt=-fsanitize=undefined
+
+# ── ThreadSanitizer (Day 7) ──────────────────────────────────────────────────
+build:tsan --copt=-fsanitize=thread
+build:tsan --copt=-g
+build:tsan --linkopt=-fsanitize=thread
+
+# ── Cross-compilation: aarch64-linux-gnu (Day 6) ─────────────────────────────
+# Use: bazel build //... --config=aarch64
+# Toolchain definition lives in toolchains/aarch64_linux_gnu/
+# build:aarch64 --platforms=//toolchains:linux_aarch64
+# build:aarch64 --crosstool_top=//toolchains/aarch64_linux_gnu:toolchain
+# (Uncomment on Day 6 when toolchain is wired up)
+
+# ── Execution log (useful for CAS/cache hit analysis) ────────────────────────
+# Use: bazel build //... --config=execlog
+build:execlog --execution_log_json_file=/tmp/bazel_exec.log
