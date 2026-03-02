@@ -1,0 +1,21 @@
+module(
+    name = "nvidia_scale_build_ci",
+    version = "0.1.0",
+)
+
+# ── Core build rules ──────────────────────────────────────────────────────────
+bazel_dep(name = "rules_cc", version = "0.0.9")
+bazel_dep(name = "rules_proto", version = "6.0.2")
+
+# protobuf: provides proto_library + cc_proto_library support.
+# Pin to a specific version for hermetic/reproducible builds (Day 4 exercise).
+bazel_dep(name = "protobuf", version = "27.0")
+
+# ── Test dependencies ─────────────────────────────────────────────────────────
+bazel_dep(name = "googletest", version = "1.14.0")
+
+# ── Developer tooling (optional, for Day 7 validation actions) ────────────────
+# bazel_dep(name = "hedron_compile_commands", version = "...")  # compile_commands.json
+
+# NOTE: If a dep is unavailable in BCR, you can use:
+#   archive_override(module_name = "...", url = "...", integrity = "sha256-...")
