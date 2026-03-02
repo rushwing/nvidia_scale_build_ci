@@ -1,23 +1,45 @@
 ## re/docker-compose.yml
-## Local Remote Cache emulation (Day 5 exercise).
+## Local build infrastructure: BuildBuddy (UI + cache + BES) + bazel-remote (cache-only fallback)
 ##
-## Start:  docker compose -f re/docker-compose.yml up -d
-## Stop:   docker compose -f re/docker-compose.yml down
+## Quick start:
+##   docker compose -f re/docker-compose.yml up -d
 ##
-## Then build with:
-##   bazel build //services/infer:inferd --config=remote_cache
+## Then choose a config:
+##   bazel build //... --config=buildbuddy       ← UI at http://localhost:8080
+##   bazel build //... --config=remote_cache     ← bazel-remote only (no UI)
 ##
-## bazel-remote docs: https://github.com/buchgr/bazel-remote
+## Docs:
+##   BuildBuddy OSS: https://github.com/buildbuddy-io/buildbuddy
+##   bazel-remote:   https://github.com/buchgr/bazel-remote
 
 version: "3.8"
 
 services:
+
+  # ── BuildBuddy OSS ─────────────────────────────────────────────────────────
+  # Provides:  Web UI (port 8080) + BES endpoint (port 9090) + remote cache
+  # This is what NVIDIA-scale CI would run on-prem to avoid sending source
+  # code to external services.
+  buildbuddy:
+    image: gcr.io/flame-public/buildbuddy-app-onprem:latest
+    container_name: buildbuddy
+    ports:
+      - "8080:8080"   # Web UI  → open http://localhost:8080 after a build
+      - "9090:9090"   # gRPC    → --bes_backend + --remote_cache endpoint
+    volumes:
+      - buildbuddy-data:/data
+      - ./buildbuddy.yaml:/config.yaml:ro
+    restart: unless-stopped
+
+  # ── bazel-remote ───────────────────────────────────────────────────────────
+  # Lightweight cache-only server (no UI). Kept as a fallback / comparison.
+  # Use --config=remote_cache to target this instead of BuildBuddy.
   bazel-remote:
     image: buchgr/bazel-remote-cache:latest
     container_name: bazel-remote
     ports:
-      - "9092:9092"   # HTTP cache endpoint  (--remote_cache=http://localhost:9092)
-      - "9093:9093"   # gRPC endpoint        (--remote_cache=grpc://localhost:9093)
+      - "9092:9092"   # HTTP cache  → --remote_cache=http://localhost:9092
+      - "9093:9093"   # gRPC cache  → --remote_cache=grpc://localhost:9093
     volumes:
       - bazel-remote-data:/data
     command: >
@@ -25,6 +47,8 @@ services:
       --max_size=5
       --port=9092
       --grpc_port=9093
+    restart: unless-stopped
 
 volumes:
+  buildbuddy-data:
   bazel-remote-data:

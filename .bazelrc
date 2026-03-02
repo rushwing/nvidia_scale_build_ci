@@ -63,6 +63,33 @@ build:tsan --linkopt=-fsanitize=thread
 # build:aarch64 --crosstool_top=//toolchains/aarch64_linux_gnu:toolchain
 # (Uncomment on Day 6 when toolchain is wired up)
 
-# ── Execution log (useful for CAS/cache hit analysis) ────────────────────────
+# ── BuildBuddy: self-hosted (docker-compose re/docker-compose.yml) ───────────
+# Start:  docker compose -f re/docker-compose.yml up -d
+# Build:  bazel build //... --config=buildbuddy
+# UI:     http://localhost:8080
+#
+# What you see in the UI:
+#   - Invocation timeline: which Actions ran in parallel, how long each took
+#   - Cache hit / miss per Action (proves hermetic / reproducible builds)
+#   - Test result breakdown per test case
+#   - Full command lines for every CppCompile / CppLink / GenProto action
+build:buildbuddy --bes_backend=grpc://localhost:9090
+build:buildbuddy --bes_results_url=http://localhost:8080/invocation/
+build:buildbuddy --remote_cache=grpc://localhost:9090
+build:buildbuddy --remote_download_minimal
+build:buildbuddy --remote_accept_cached
+
+# ── BuildBuddy: cloud free tier (no Docker needed) ───────────────────────────
+# 1. Sign up at https://app.buildbuddy.io (free, 100 invocations/day)
+# 2. Settings → API Keys → copy key
+# 3. Paste key below, then: bazel build //... --config=buildbuddy_cloud
+build:buildbuddy_cloud --bes_backend=grpcs://remote.buildbuddy.io
+build:buildbuddy_cloud --bes_results_url=https://app.buildbuddy.io/invocation/
+build:buildbuddy_cloud --remote_cache=grpcs://remote.buildbuddy.io
+build:buildbuddy_cloud --remote_download_minimal
+build:buildbuddy_cloud --remote_accept_cached
+# build:buildbuddy_cloud --remote_header=x-buildbuddy-api-key=<YOUR_KEY_HERE>
+
+# ── Execution log (useful for CAS/cache hit analysis without BuildBuddy) ─────
 # Use: bazel build //... --config=execlog
 build:execlog --execution_log_json_file=/tmp/bazel_exec.log
