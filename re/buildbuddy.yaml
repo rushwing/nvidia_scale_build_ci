@@ -4,9 +4,11 @@
 
 app:
   build_buddy_url: "http://localhost:8080"
-  # events_api_url is the gRPC BES endpoint clients connect to
-  events_api_url: "grpc://localhost:9090"
-  cache_api_url: "grpc://localhost:9090"
+  # BuildBuddy uses cmux on port 8080 to multiplex HTTP/1.1 (UI) and
+  # gRPC/HTTP2 (BES + cache) on the same port. Port 9090 is HTTP/1.1
+  # monitoring only — do NOT point Bazel gRPC clients at it.
+  events_api_url: "grpc://localhost:8080"
+  cache_api_url: "grpc://localhost:8080"
 
 database:
   # SQLite is sufficient for local dev; use MySQL/Postgres for team deployments

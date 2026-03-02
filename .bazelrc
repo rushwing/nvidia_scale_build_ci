@@ -73,9 +73,9 @@ build:tsan --linkopt=-fsanitize=thread
 #   - Cache hit / miss per Action (proves hermetic / reproducible builds)
 #   - Test result breakdown per test case
 #   - Full command lines for every CppCompile / CppLink / GenProto action
-build:buildbuddy --bes_backend=grpc://localhost:9090
+build:buildbuddy --bes_backend=grpc://localhost:8080
 build:buildbuddy --bes_results_url=http://localhost:8080/invocation/
-build:buildbuddy --remote_cache=grpc://localhost:9090
+build:buildbuddy --remote_cache=grpc://localhost:8080
 build:buildbuddy --remote_download_minimal
 build:buildbuddy --remote_accept_cached
 
