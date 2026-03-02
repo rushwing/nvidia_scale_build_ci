@@ -92,3 +92,34 @@ build:buildbuddy_cloud --remote_accept_cached
 # ── Execution log (useful for CAS/cache hit analysis without BuildBuddy) ─────
 # Use: bazel build //... --config=execlog
 build:execlog --execution_log_json_file=/tmp/bazel_exec.log
+
+# ── BuildBuddy: self-hosted (docker-compose re/docker-compose.yml) ───────────
+# Start:  docker compose -f re/docker-compose.yml up -d
+# Build:  bazel build //... --config=buildbuddy
+# UI:     http://localhost:8080
+#
+# BuildBuddy OSS port layout:
+#   8080  HTTP/1.1  Web UI only           ← browser, NOT gRPC
+#   1985  gRPC h2c  BES + remote cache    ← Bazel clients connect here
+#   1987  gRPC TLS  BES + remote cache    ← same with grpcs://
+#   9090  HTTP/1.1  pprof monitoring      ← NOT gRPC
+#
+# NOTE: BuildBuddy OSS supports BES (visualization) + remote cache.
+#       Remote EXECUTION is Enterprise/Cloud only — do NOT set --remote_executor.
+build:buildbuddy --bes_backend=grpc://localhost:1985
+build:buildbuddy --bes_results_url=http://localhost:8080/invocation/
+build:buildbuddy --remote_cache=grpc://localhost:1985
+build:buildbuddy --remote_download_minimal
+build:buildbuddy --noremote_upload_local_results
+build:buildbuddy --remote_timeout=600s
+
+# ── BuildBuddy: cloud free tier (no Docker needed) ───────────────────────────
+# 1. Sign up at https://app.buildbuddy.io (free, 100 invocations/day)
+# 2. Settings → API Keys → copy key
+# 3. Paste below, then: bazel build //... --config=buildbuddy_cloud
+build:buildbuddy_cloud --bes_backend=grpcs://remote.buildbuddy.io
+build:buildbuddy_cloud --bes_results_url=https://app.buildbuddy.io/invocation/
+build:buildbuddy_cloud --remote_cache=grpcs://remote.buildbuddy.io
+build:buildbuddy_cloud --remote_download_minimal
+build:buildbuddy_cloud --remote_accept_cached
+# build:buildbuddy_cloud --remote_header=x-buildbuddy-api-key=<YOUR_KEY_HERE>
