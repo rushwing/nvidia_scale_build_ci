@@ -68,14 +68,13 @@ build:tsan --linkopt=-fsanitize=thread
 # Build:  bazel build //... --config=buildbuddy
 # UI:     http://localhost:8080
 #
-# What you see in the UI:
-#   - Invocation timeline: which Actions ran in parallel, how long each took
-#   - Cache hit / miss per Action (proves hermetic / reproducible builds)
-#   - Test result breakdown per test case
-#   - Full command lines for every CppCompile / CppLink / GenProto action
-build:buildbuddy --bes_backend=grpc://localhost:8080
+# Port layout confirmed from BuildBuddy startup logs:
+#   8080 = HTTP web UI (HTTP/1.1 only — NOT gRPC)
+#   1985 = gRPC plaintext for BES + remote cache  ← Bazel connects here
+#   9090 = pprof/prometheus monitoring (HTTP/1.1 — NOT gRPC)
+build:buildbuddy --bes_backend=grpc://localhost:1985
 build:buildbuddy --bes_results_url=http://localhost:8080/invocation/
-build:buildbuddy --remote_cache=grpc://localhost:8080
+build:buildbuddy --remote_cache=grpc://localhost:1985
 build:buildbuddy --remote_download_minimal
 build:buildbuddy --remote_accept_cached
 

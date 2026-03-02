@@ -17,15 +17,18 @@ version: "3.8"
 services:
 
   # ── BuildBuddy OSS ─────────────────────────────────────────────────────────
-  # Provides:  Web UI + BES + remote cache — all multiplexed on port 8080
-  # via cmux (HTTP/1.1 for UI, HTTP/2 gRPC for Bazel clients).
-  # Port 9090 inside the container is HTTP/1.1 monitoring only — not exposed.
+  # Port layout (confirmed from startup logs):
+  #   8080  → HTTP  Web UI only (HTTP/1.1)
+  #   1985  → gRPC  BES + remote cache (plaintext, grpc://)
+  #   1987  → gRPC  BES + remote cache (TLS,       grpcs://)
+  #   9090  → HTTP  pprof/prometheus monitoring (NOT gRPC)
   buildbuddy:
     image: gcr.io/flame-public/buildbuddy-app-onprem:latest
     platform: linux/amd64
     container_name: buildbuddy
     ports:
-      - "8080:8080"   # cmux: Web UI (HTTP/1.1) + BES/cache (gRPC/HTTP2)
+      - "8080:8080"   # Web UI  → http://localhost:8080
+      - "1985:1985"   # gRPC    → --bes_backend=grpc://localhost:1985
     volumes:
       - buildbuddy-data:/data
       - ./buildbuddy.yaml:/config.yaml:ro
